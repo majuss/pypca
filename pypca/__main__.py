@@ -2,10 +2,12 @@ import pypca
 import argparse
 import logging
 import json
+import time
 
 from pypca.exceptions import PCAException
 
 _LOGGER = logging.getLogger('pcacl')
+
 
 def setup_logging(log_level=logging.INFO):
     """Set up the logging."""
@@ -38,24 +40,27 @@ def setup_logging(log_level=logging.INFO):
     logger = logging.getLogger('')
     logger.setLevel(log_level)
 
+
 def get_arguments():
     """Get parsed arguments."""
     parser = argparse.ArgumentParser("pyPCA: Command Line Utility")
 
-    # parser.add_argument(
-    #     '-u', '--username',
-    #     help='Username',
-    #     required=False)
+    parser.add_argument(
+        '-p', '--port',
+        help='Serial port',
+        required=True,
+        default='/dev/ttyUSB0')
 
-    # parser.add_argument(
-    #     '-p', '--password',
-    #     help='Password',
-    #     required=False)
+    parser.add_argument(
+        '-b', '--baudrate',
+        help='Baudrate',
+        required=True,
+        default=57600)
 
-    # parser.add_argument(
-    #     '--arm',
-    #     help='Arm alarm to mode',
-    #     required=False, default=False, action="store_true")
+    parser.add_argument(
+        '--scan',
+        help='Scan for available devices',
+        required=False, default=False, action="store_true")
 
     # parser.add_argument(
     #     '-i', '--ip_address',
@@ -71,7 +76,7 @@ def get_arguments():
     #     '--home',
     #     help='Set to home mode',
     #     required=False, default=False, action="store_true")
-    
+
     parser.add_argument(
         '--devices',
         help='Output all devices',
@@ -81,7 +86,7 @@ def get_arguments():
     #     '--history',
     #     help='Get the history',
     #     required=False, default=False, action="store_true")
-    
+
     # parser.add_argument(
     #     '--status',
     #     help='Get the status of the panel',
@@ -101,18 +106,18 @@ def get_arguments():
 
 def call():
     """Execute command line helper."""
-    args = get_arguments()
+    args=get_arguments()
 
     if args.debug:
-        log_level = logging.DEBUG
+        log_level=logging.DEBUG
     elif args.quiet:
-        log_level = logging.WARN
+        log_level=logging.WARN
     else:
-        log_level = logging.INFO
+        log_level=logging.INFO
 
     setup_logging(log_level)
 
-    pca = None
+    pca=None
 
     # if not args.username or not args.password or not args.ip_address:
     #         raise Exception("Please supply a username, password and ip.")
@@ -122,14 +127,19 @@ def call():
 
     try:
         # if args.username and args.password and args.ip_address:
-        pca = pypca.PCA()
-        
-        # if args.arm:
-        #     if lupusec.get_alarm().set_away():
-        #         _LOGGER.info('Alarm mode changed to armed')
-        #     else:
-        #         _LOGGER.warning('Failed to change alarm mode to armed')
-        
+        pca = pypca.PCA(args.port, args.baudrate)
+        pca.open()
+        time.sleep(2)
+
+        if args.scan:
+            pca.start_scan()
+            while True:
+                time.sleep(1)
+            # if pca.start_scan():
+            #     _LOGGER.info('Started the scanner')
+            # else:
+            #     _LOGGER.warning('Failed to start the scanner')
+
         # if args.disarm:
         #     if lupusec.get_alarm().set_standby():
         #         _LOGGER.info('Alarm mode changed to disarmed')
@@ -141,18 +151,18 @@ def call():
         #         _LOGGER.info('Alarm mode changed to home')
         #     else:
         #         _LOGGER.warning('Failed to change alarm mode to home')
-            
+
         # if args.history:
         #     _LOGGER.info(json.dumps(lupusec.get_history()['hisrows'], indent=4, sort_keys=True))
 
         # if args.status:
         #     _LOGGER.info('Mode of panel: %s', lupusec.get_alarm().mode)
-        
+
         if args.devices:
             for device in pca.get_devices():
                 print(device)
                 # _devicePrint(device)
-                
+
     except pypca.PCAException as exc:
         _LOGGER.error(exc)
     finally:
