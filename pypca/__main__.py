@@ -1,11 +1,11 @@
-import lupupy
+import pypca
 import argparse
 import logging
 import json
 
-from lupupy.exceptions import LupusecException
+from pypca.exceptions import PCAException
 
-_LOGGER = logging.getLogger('lupuseccl')
+_LOGGER = logging.getLogger('pcacl')
 
 def setup_logging(log_level=logging.INFO):
     """Set up the logging."""
@@ -40,52 +40,52 @@ def setup_logging(log_level=logging.INFO):
 
 def get_arguments():
     """Get parsed arguments."""
-    parser = argparse.ArgumentParser("Lupupy: Command Line Utility")
+    parser = argparse.ArgumentParser("pyPCA: Command Line Utility")
 
-    parser.add_argument(
-        '-u', '--username',
-        help='Username',
-        required=False)
+    # parser.add_argument(
+    #     '-u', '--username',
+    #     help='Username',
+    #     required=False)
 
-    parser.add_argument(
-        '-p', '--password',
-        help='Password',
-        required=False)
+    # parser.add_argument(
+    #     '-p', '--password',
+    #     help='Password',
+    #     required=False)
 
-    parser.add_argument(
-        '--arm',
-        help='Arm alarm to mode',
-        required=False, default=False, action="store_true")
+    # parser.add_argument(
+    #     '--arm',
+    #     help='Arm alarm to mode',
+    #     required=False, default=False, action="store_true")
 
-    parser.add_argument(
-        '-i', '--ip_address',
-        help='IP of the Lupus panel',
-        required=False)    
+    # parser.add_argument(
+    #     '-i', '--ip_address',
+    #     help='IP of the Lupus panel',
+    #     required=False)
 
-    parser.add_argument(
-        '--disarm',
-        help='Disarm the alarm',
-        required=False, default=False, action="store_true")
+    # parser.add_argument(
+    #     '--disarm',
+    #     help='Disarm the alarm',
+    #     required=False, default=False, action="store_true")
 
-    parser.add_argument(
-        '--home',
-        help='Set to home mode',
-        required=False, default=False, action="store_true")
+    # parser.add_argument(
+    #     '--home',
+    #     help='Set to home mode',
+    #     required=False, default=False, action="store_true")
     
     parser.add_argument(
         '--devices',
         help='Output all devices',
         required=False, default=False, action="store_true")
 
-    parser.add_argument(
-        '--history',
-        help='Get the history',
-        required=False, default=False, action="store_true")
+    # parser.add_argument(
+    #     '--history',
+    #     help='Get the history',
+    #     required=False, default=False, action="store_true")
     
-    parser.add_argument(
-        '--status',
-        help='Get the status of the panel',
-        required=False, default=False, action="store_true")
+    # parser.add_argument(
+    #     '--status',
+    #     help='Get the status of the panel',
+    #     required=False, default=False, action="store_true")
 
     parser.add_argument(
         '--debug',
@@ -112,49 +112,48 @@ def call():
 
     setup_logging(log_level)
 
-    lupusec = None
+    pca = None
 
-    if not args.username or not args.password or not args.ip_address:
-            raise Exception("Please supply a username, password and ip.")
+    # if not args.username or not args.password or not args.ip_address:
+    #         raise Exception("Please supply a username, password and ip.")
 
-    def _devicePrint(dev, append=''):
-        _LOGGER.info("%s%s", dev.desc, append)
+    # def _devicePrint(dev, append=''):
+    #     _LOGGER.info("%s%s", dev.desc, append)
 
     try:
-        if args.username and args.password and args.ip_address:
-            lupusec = lupupy.Lupusec(ip_address=args.ip_address,
-                                     username=args.username,
-                                     password=args.password)
+        # if args.username and args.password and args.ip_address:
+        pca = pypca.PCA()
         
-        if args.arm:
-            if lupusec.get_alarm().set_away():
-                _LOGGER.info('Alarm mode changed to armed')
-            else:
-                _LOGGER.warning('Failed to change alarm mode to armed')
+        # if args.arm:
+        #     if lupusec.get_alarm().set_away():
+        #         _LOGGER.info('Alarm mode changed to armed')
+        #     else:
+        #         _LOGGER.warning('Failed to change alarm mode to armed')
         
-        if args.disarm:
-            if lupusec.get_alarm().set_standby():
-                _LOGGER.info('Alarm mode changed to disarmed')
-            else:
-                _LOGGER.warning('Failed to change alarm mode to disarmed')
+        # if args.disarm:
+        #     if lupusec.get_alarm().set_standby():
+        #         _LOGGER.info('Alarm mode changed to disarmed')
+        #     else:
+        #         _LOGGER.warning('Failed to change alarm mode to disarmed')
 
-        if args.home:
-            if lupusec.get_alarm().set_home():
-                _LOGGER.info('Alarm mode changed to home')
-            else:
-                _LOGGER.warning('Failed to change alarm mode to home')
+        # if args.home:
+        #     if lupusec.get_alarm().set_home():
+        #         _LOGGER.info('Alarm mode changed to home')
+        #     else:
+        #         _LOGGER.warning('Failed to change alarm mode to home')
             
-        if args.history:
-            _LOGGER.info(json.dumps(lupusec.get_history()['hisrows'], indent=4, sort_keys=True))
+        # if args.history:
+        #     _LOGGER.info(json.dumps(lupusec.get_history()['hisrows'], indent=4, sort_keys=True))
 
-        if args.status:
-            _LOGGER.info('Mode of panel: %s', lupusec.get_alarm().mode)
+        # if args.status:
+        #     _LOGGER.info('Mode of panel: %s', lupusec.get_alarm().mode)
         
         if args.devices:
-            for device in lupusec.get_devices():
-                _devicePrint(device)
+            for device in pca.get_devices():
+                print(device)
+                # _devicePrint(device)
                 
-    except lupupy.LupusecException as exc:
+    except pypca.PCAException as exc:
         _LOGGER.error(exc)
     finally:
         _LOGGER.info('--Finished running--')
