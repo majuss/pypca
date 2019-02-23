@@ -52,12 +52,6 @@ def get_arguments():
         default='/dev/ttyUSB0')
 
     parser.add_argument(
-        '-b', '--baudrate',
-        help='Baudrate',
-        required=False,
-        default=57600)
-
-    parser.add_argument(
         '--scan',
         help='Scan for available devices',
         required=False, default=False, action="store_true")
@@ -72,10 +66,17 @@ def get_arguments():
         help='Force of all Devices',
         required=False, default=False, action="store_true")
 
-    # parser.add_argument(
-    #     '--disarm',
-    #     help='Disarm the alarm',
-    #     required=False, default=False, action="store_true")
+    parser.add_argument(
+        '--on',
+        metavar='device_id',
+        help='Turn on the device with the given id',
+        required=False, action='append')
+
+    parser.add_argument(
+        '--off',
+        metavar='device_id',
+        help='Turn off the device with the given id',
+        required=False, action='append')
 
     # parser.add_argument(
     #     '--home',
@@ -133,26 +134,39 @@ def call():
 
     try:
         # if args.username and args.password and args.ip_address:
-        pca = pypca.PCA(args.port, args.baudrate)
+        pca = pypca.PCA(args.port)
         pca.open()
-        pca.get_devices()
+        pca.get_ready()
+        # pca.open()
 
         if args.scan:
             pca.start_scan()
             while True:
                 time.sleep(1)
 
-                time.sleep(1)
             # if pca.start_scan():
             #     _LOGGER.info('Started the scanner')
             # else:
             #     _LOGGER.warning('Failed to start the scanner')
 
-        if args.force_on:
-            pca.force(1)
+        # if args.force_on:
+        #     pca.force(1)
 
-        if args.force_off:
-            pca.force(0)
+        # if args.force_off:
+        #     pca.force(0)
+
+        for device_id in args.on or []:
+            pca.turn_on(device_id)
+        
+        for device_id in args.off or []:
+            pca.turn_off(device_id)
+            # device = pypca.get_device(device_id)
+
+            # if device:
+            #     if device.switch_on():
+            #         _LOGGER.info("Switched on device with id: %s", device_id)
+            # else:
+            #         _LOGGER.warning("Could not find device with id: %s", device_id)
 
         # if args.home:
         #     if lupusec.get_alarm().set_home():
@@ -168,7 +182,10 @@ def call():
 
         if args.devices:
             for device in pca.get_devices():
-                print(device)
+                _LOGGER.info("Found PCA 301 with ID: " + device)
+
+            # for device in pca.get_devices():
+            #     print(device)
                 # _devicePrint(device)
 
     except pypca.PCAException as exc:
