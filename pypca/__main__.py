@@ -1,7 +1,6 @@
 import pypca
 import argparse
 import logging
-import json
 import time
 
 from pypca.exceptions import PCAException
@@ -53,17 +52,7 @@ def get_arguments():
 
     parser.add_argument(
         '--scan',
-        help='Scan for available devices',
-        required=False, default=False, action="store_true")
-
-    parser.add_argument(
-        '-f', '--force_on',
-        help='Force on all Devices',
-        required=False, default=False, action="store_true")
-
-    parser.add_argument(
-        '-o', '--force_off',
-        help='Force of all Devices',
+        help='Scan continously and update the devices cache',
         required=False, default=False, action="store_true")
 
     parser.add_argument(
@@ -78,25 +67,10 @@ def get_arguments():
         help='Turn off the device with the given id',
         required=False, action='append')
 
-    # parser.add_argument(
-    #     '--home',
-    #     help='Set to home mode',
-    #     required=False, default=False, action="store_true")
-
     parser.add_argument(
         '--devices',
-        help='Output all devices',
+        help='Output all devices which are registred with the JeeLink',
         required=False, default=False, action="store_true")
-
-    # parser.add_argument(
-    #     '--history',
-    #     help='Get the history',
-    #     required=False, default=False, action="store_true")
-
-    # parser.add_argument(
-    #     '--status',
-    #     help='Get the status of the panel',
-    #     required=False, default=False, action="store_true")
 
     parser.add_argument(
         '--debug',
@@ -126,67 +100,26 @@ def call():
 
     pca = None
 
-    # if not args.username or not args.password or not args.ip_address:
-    #         raise Exception("Please supply a username, password and ip.")
-
-    # def _devicePrint(dev, append=''):
-    #     _LOGGER.info("%s%s", dev.desc, append)
-
     try:
-        # if args.username and args.password and args.ip_address:
         pca = pypca.PCA(args.port)
         pca.open()
-        pca.get_ready()
-        # pca.open()
 
         if args.scan:
             pca.start_scan()
             while True:
                 time.sleep(1)
 
-            # if pca.start_scan():
-            #     _LOGGER.info('Started the scanner')
-            # else:
-            #     _LOGGER.warning('Failed to start the scanner')
-
-        # if args.force_on:
-        #     pca.force(1)
-
-        # if args.force_off:
-        #     pca.force(0)
-
         for device_id in args.on or []:
+            pca.get_devices()
             pca.turn_on(device_id)
-        
+
         for device_id in args.off or []:
+            pca.get_devices()
             pca.turn_off(device_id)
-            # device = pypca.get_device(device_id)
-
-            # if device:
-            #     if device.switch_on():
-            #         _LOGGER.info("Switched on device with id: %s", device_id)
-            # else:
-            #         _LOGGER.warning("Could not find device with id: %s", device_id)
-
-        # if args.home:
-        #     if lupusec.get_alarm().set_home():
-        #         _LOGGER.info('Alarm mode changed to home')
-        #     else:
-        #         _LOGGER.warning('Failed to change alarm mode to home')
-
-        # if args.history:
-        #     _LOGGER.info(json.dumps(lupusec.get_history()['hisrows'], indent=4, sort_keys=True))
-
-        # if args.status:
-        #     _LOGGER.info('Mode of panel: %s', lupusec.get_alarm().mode)
 
         if args.devices:
             for device in pca.get_devices():
                 _LOGGER.info("Found PCA 301 with ID: " + device)
-
-            # for device in pca.get_devices():
-            #     print(device)
-                # _devicePrint(device)
 
     except pypca.PCAException as exc:
         _LOGGER.error(exc)

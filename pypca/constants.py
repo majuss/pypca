@@ -12,5 +12,4 @@ PROJECT_LONG_DESCRIPTION = ('pypca is a python3 interface for'
                             ' integration of all you devices.')
 PROJECT_AUTHOR = 'Majuss'
 
-KNOWN_DEVICES_NAME = '.known_pca_devices'
 SEND_SUFFIX = 's'

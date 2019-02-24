@@ -23,7 +23,7 @@ setup(
     include_package_data=True,
     python_requires='>=3.5',
     install_requires=[
-        'pyserial',
+        'serial',
         'colorlog'
         # 'pathlib'
     ],
