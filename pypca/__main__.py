@@ -103,7 +103,6 @@ def call():
     try:
         pca = pypca.PCA(args.port)
         pca.open()
-
         if args.scan:
             pca.start_scan()
             while True:
@@ -118,8 +117,12 @@ def call():
             pca.turn_off(device_id)
 
         if args.devices:
-            for device in pca.get_devices():
-                _LOGGER.info("Found PCA 301 with ID: " + device)
+            devices = pca.get_devices()
+            if devices:
+                for device in devices:
+                    _LOGGER.info("Found PCA 301 with ID: " + device)
+            else:
+                _LOGGER.info("No PCA devices found, please make sure you plug them in")
 
     except pypca.PCAException as exc:
         _LOGGER.error(exc)

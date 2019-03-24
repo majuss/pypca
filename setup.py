@@ -25,7 +25,6 @@ setup(
     install_requires=[
         'pyserial',
         'colorlog'
-        # 'pathlib'
     ],
     test_suite='tests',
     entry_points={

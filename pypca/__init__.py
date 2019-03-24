@@ -10,7 +10,7 @@ import pypca.constants as CONST
 
 _LOGGER = logging.getLogger(__name__)
 
-
+#get ready-> get last line not second or something, or flush output after ready
 class PCA():
 
     _serial = None
@@ -47,17 +47,16 @@ class PCA():
     def get_ready(self):
         """Wait til the device is ready"""
         line = self._serial.readline().decode('utf-8')
-
-        while self._re_reading.match(line) is None:
+        start = time.time()
+        timeout = 5
+        while self._re_reading.match(line) is None and time.time() - start < timeout:
             line = self._serial.readline().decode('utf-8')
         return True
 
     def get_devices(self):
         """Get all the devices with the help of the l switch"""
-
         self._write_cmd('l')
         line = self._serial.readline().decode('utf-8')
-
         while self._re_devices.match(line) is not None:
             # add the line to devices dict
             line = line.split(' ')
