@@ -3,7 +3,7 @@ import argparse
 import logging
 import time
 
-from pypca.exceptions import PCAException
+# from pypca.exceptions import PCAException
 
 _LOGGER = logging.getLogger('pcacl')
 
@@ -122,7 +122,8 @@ def call():
                 for device in devices:
                     _LOGGER.info("Found PCA 301 with ID: " + device)
             else:
-                _LOGGER.info("No PCA devices found, please make sure you plug them in")
+                _LOGGER.info("No PCA devices found, please make sure\
+                               you plug them in")
 
     except pypca.PCAException as exc:
         _LOGGER.error(exc)

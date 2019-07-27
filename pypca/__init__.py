@@ -1,16 +1,17 @@
 from __future__ import unicode_literals
 import logging
-from serial import Serial
+import serial
 import re
 import threading
 import time
 
-from pypca.exceptions import PCAException
+# from pypca.exceptions import PCAException
 import pypca.constants as CONST
 
 _LOGGER = logging.getLogger(__name__)
 
-#get ready-> get last line not second or something, or flush output after ready
+
+# get ready-> get last line not second or something, or flush output after ready
 class PCA():
 
     _serial = None
@@ -27,7 +28,7 @@ class PCA():
         self._port = port
         self._baud = 57600
         self._timeout = timeout
-        self._serial = Serial(timeout=timeout)
+        self._serial = serial.Serial(timeout=timeout)
 
     def open(self):
         """Open the device."""
@@ -43,7 +44,7 @@ class PCA():
         """Close the device."""
         self._stop_worker()
         self._serial.close()
-    
+
     def get_ready(self):
         """Wait til the device is ready"""
         line = self._serial.readline().decode('utf-8')
@@ -67,11 +68,11 @@ class PCA():
             self._devices[deviceId]['power'] = (
                 int(line[11]) * 256 + int(line[12])) / 10.0
             self._devices[deviceId]['consumption'] = (
-                int(line[13]) * 256+ int(line[14])) / 100.0
+                int(line[13]) * 256 + int(line[14])) / 100.0
             line = self._serial.readline().decode('utf-8')
-            time.sleep(0.05) #sleep here, otherwise the loop will lock the serial interface
+            time.sleep(0.05)  # sleep here, otherwise the loop will lock the serial interface
         return self._devices
-    
+
     def get_current_power(self, deviceId):
         """Get current power usage of given DeviceID."""
         return self._devices[deviceId]['power']
@@ -145,4 +146,4 @@ class PCA():
                     int(line[8]) * 256 + int(line[9])) / 10.0
                 self._devices[deviceId]['state'] = int(line[7])
                 self._devices[deviceId]['consumption'] = (
-                    int(line[10]) * 256+ int(line[11])) / 100.0
+                    int(line[10]) * 256 + int(line[11])) / 100.0
