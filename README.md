@@ -15,7 +15,7 @@ pip install pypca
 
 ## Usage
 
-You can integrate the library into your own project, or simply use it in the command line.
+You can integrate the library into your own project, or simply use it in the command line. Please turn your PCAs on via the button to initially scan for devices, otherwise they cannot be identified.
 ```
 pypca --devices
 ```

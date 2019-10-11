@@ -122,8 +122,7 @@ def call():
                 for device in devices:
                     _LOGGER.info("Found PCA 301 with ID: " + device)
             else:
-                _LOGGER.info("No PCA devices found, please make sure\
-                               you plug them in")
+                _LOGGER.info("No PCA devices found, please make sure you plug them in and turn them on")
 
     except pypca.PCAException as exc:
         _LOGGER.error(exc)
