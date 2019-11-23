@@ -12,15 +12,17 @@ _LOGGER = logging.getLogger(__name__)
 
 
 # get ready-> get last line not second or something, or flush output after ready
-class PCA():
+class PCA:
 
     _serial = None
     _stopevent = None
     _thread = None
     _re_reading = re.compile(
-        r'OK 24 (\d+) 4 (\d+) (\d+) (\d+) (\d+) (\d+) (\d+) (\d+) (\d+)')
+        r"OK 24 (\d+) 4 (\d+) (\d+) (\d+) (\d+) (\d+) (\d+) (\d+) (\d+)"
+    )
     _re_devices = re.compile(
-        r'L 24 (\d+) (\d+) : (\d+) 4 (\d+) (\d+) (\d+) (\d+) (\d+) (\d+) (\d+) (\d+)')
+        r"L 24 (\d+) (\d+) : (\d+) 4 (\d+) (\d+) (\d+) (\d+) (\d+) (\d+) (\d+) (\d+)"
+    )
 
     def __init__(self, port, timeout=2):
         """Initialize the pca device."""
@@ -47,43 +49,48 @@ class PCA():
 
     def get_ready(self):
         """Wait til the device is ready"""
-        line = self._serial.readline().decode('utf-8')
+        line = self._serial.readline().decode("utf-8")
         start = time.time()
         timeout = 5
         while self._re_reading.match(line) is None and time.time() - start < timeout:
-            line = self._serial.readline().decode('utf-8')
+            line = self._serial.readline().decode("utf-8")
         return True
 
     def get_devices(self):
         """Get all the devices with the help of the l switch"""
-        self._write_cmd('l')
-        line = self._serial.readline().decode('utf-8')
+        self._write_cmd("l")
+        line = self._serial.readline().decode("utf-8")
         while self._re_devices.match(line) is not None:
             # add the line to devices dict
-            line = line.split(' ')
-            deviceId = str(line[7]).zfill(
-                3) + str(line[8]).zfill(3) + str(line[9]).zfill(3)
+            line = line.split(" ")
+            deviceId = (
+                str(line[7]).zfill(3) + str(line[8]).zfill(3) + str(line[9]).zfill(3)
+            )
             self._devices[deviceId] = {}
-            self._devices[deviceId]['state'] = line[10]
-            self._devices[deviceId]['power'] = (
-                int(line[11]) * 256 + int(line[12])) / 10.0
-            self._devices[deviceId]['consumption'] = (
-                int(line[13]) * 256 + int(line[14])) / 100.0
-            line = self._serial.readline().decode('utf-8')
-            time.sleep(0.05)  # sleep here, otherwise the loop will lock the serial interface
+            self._devices[deviceId]["state"] = line[10]
+            self._devices[deviceId]["power"] = (
+                int(line[11]) * 256 + int(line[12])
+            ) / 10.0
+            self._devices[deviceId]["consumption"] = (
+                int(line[13]) * 256 + int(line[14])
+            ) / 100.0
+            line = self._serial.readline().decode("utf-8")
+            time.sleep(
+                0.05
+            )  # sleep here, otherwise the loop will lock the serial interface
         return self._devices
 
     def get_current_power(self, deviceId):
         """Get current power usage of given DeviceID."""
-        return self._devices[deviceId]['power']
+        return self._devices[deviceId]["power"]
 
     def get_total_consumption(self, deviceId):
         """Get total power consumption of given DeviceID in KWh."""
-        return self._devices[deviceId]['consumption']
+        return self._devices[deviceId]["consumption"]
 
     def get_state(self, deviceId):
         """Get state of given DeviceID."""
-        return self._devices[deviceId]['state']
+        return self._devices[deviceId]["state"]
 
     def _stop_worker(self):
         if self._stopevent is not None:
@@ -111,20 +118,30 @@ class PCA():
 
     def turn_off(self, deviceId):
         """Turn off given DeviceID."""
-        address = re.findall('...', deviceId)
-        offCommand = '1,5,{},{},{},{},255,255,255,255{}'.format(
-            address[0].lstrip('0'), address[1].lstrip('0'), address[2].lstrip('0'), '0', CONST.SEND_SUFFIX)
+        address = re.findall("...", deviceId)
+        offCommand = "1,5,{},{},{},{},255,255,255,255{}".format(
+            address[0].lstrip("0"),
+            address[1].lstrip("0"),
+            address[2].lstrip("0"),
+            "0",
+            CONST.SEND_SUFFIX,
+        )
         self._write_cmd(offCommand)
-        self._devices[deviceId]['state'] = 0
+        self._devices[deviceId]["state"] = 0
         return True
 
     def turn_on(self, deviceId):
         """Turn on given DeviceID."""
-        address = re.findall('...', deviceId)
-        onCommand = '1,5,{},{},{},{},255,255,255,255{}'.format(
-            address[0].lstrip('0'), address[1].lstrip('0'), address[2].lstrip('0'), '1', CONST.SEND_SUFFIX)
+        address = re.findall("...", deviceId)
+        onCommand = "1,5,{},{},{},{},255,255,255,255{}".format(
+            address[0].lstrip("0"),
+            address[1].lstrip("0"),
+            address[2].lstrip("0"),
+            "1",
+            CONST.SEND_SUFFIX,
+        )
         self._write_cmd(onCommand)
-        self._devices[deviceId]['state'] = 1
+        self._devices[deviceId]["state"] = 1
         return True
 
     def _refresh(self):
@@ -134,16 +151,21 @@ class PCA():
             line = self._serial.readline()
             # this is for python2/python3 compatibility. Is there a better way?
             try:
-                line = line.encode().decode('utf-8')
+                line = line.encode().decode("utf-8")
             except AttributeError:
-                line = line.decode('utf-8')
+                line = line.decode("utf-8")
 
             if self._re_reading.match(line):
-                line = line.split(' ')
-                deviceId = str(line[4]).zfill(
-                    3) + str(line[5]).zfill(3) + str(line[6]).zfill(3)
-                self._devices[deviceId]['power'] = (
-                    int(line[8]) * 256 + int(line[9])) / 10.0
-                self._devices[deviceId]['state'] = int(line[7])
-                self._devices[deviceId]['consumption'] = (
-                    int(line[10]) * 256 + int(line[11])) / 100.0
+                line = line.split(" ")
+                deviceId = (
+                    str(line[4]).zfill(3)
+                    + str(line[5]).zfill(3)
+                    + str(line[6]).zfill(3)
+                )
+                self._devices[deviceId]["power"] = (
+                    int(line[8]) * 256 + int(line[9])
+                ) / 10.0
+                self._devices[deviceId]["state"] = int(line[7])
+                self._devices[deviceId]["consumption"] = (
+                    int(line[10]) * 256 + int(line[11])
+                ) / 100.0
