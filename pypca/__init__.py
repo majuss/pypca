@@ -3,10 +3,9 @@ import logging
 import serial
 import re
 import threading
-import time
-
-# from pypca.exceptions import PCAException
+from time import time
 import pypca.constants as CONST
+import pickle
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -32,6 +31,13 @@ class PCA:
         self._timeout = timeout
         self._serial = serial.Serial(timeout=timeout)
 
+        try:
+            self._known_devices = pickle.load(open(".pca_devices", "rb"))
+        except (OSError, IOError) as e:
+            self._known_devices = []
+            pickle.dump(self._known_devices, open("var.pickle", "wb"))
+            pickle.dump(self._known_devices, open(".pca_devices", "wb"))
+
     def open(self):
         """Open the device."""
         self._serial.port = self._port
@@ -50,34 +56,33 @@ class PCA:
     def get_ready(self):
         """Wait til the device is ready"""
         line = self._serial.readline().decode("utf-8")
-        start = time.time()
-        timeout = 5
-        while self._re_reading.match(line) is None and time.time() - start < timeout:
+        start = time()
+        timeout = 2
+        while self._re_reading.match(line) is None and time() - start < timeout:
             line = self._serial.readline().decode("utf-8")
         return True
-
+    
     def get_devices(self):
-        """Get all the devices with the help of the l switch"""
-        self._write_cmd("l")
-        line = self._serial.readline().decode("utf-8")
-        while self._re_devices.match(line) is not None:
-            # add the line to devices dict
-            line = line.split(" ")
-            deviceId = (
-                str(line[7]).zfill(3) + str(line[8]).zfill(3) + str(line[9]).zfill(3)
-            )
-            self._devices[deviceId] = {}
-            self._devices[deviceId]["state"] = line[10]
-            self._devices[deviceId]["power"] = (
-                int(line[11]) * 256 + int(line[12])
-            ) / 10.0
-            self._devices[deviceId]["consumption"] = (
-                int(line[13]) * 256 + int(line[14])
-            ) / 100.0
+        """Get all the devices with the help of the l switch"""  # When the EEPROM is fried this is basically useless
+        _LOGGER.info("Please press the button on you PCA")
+        line = []
+        start = int(time())
+        found = False
+        while not (int(time()) - start > CONST.DISCOVERY_TIMEOUT) or not (int(time()) - start > CONST.DISCOVERY_TIME or found):
             line = self._serial.readline().decode("utf-8")
-            time.sleep(
-                0.05
-            )  # sleep here, otherwise the loop will lock the serial interface
+            if len(line) > 1:
+                line = line.split(" ")
+                deviceId = str(line[4]).zfill(3) + str(line[5]).zfill(3) + str(line[6]).zfill(3)
+                self._devices[deviceId] = {}
+                self._devices[deviceId]["state"] = line[10]
+                if deviceId in self._known_devices:
+                    _LOGGER.info("Skip device with ID {}, because it's already known.".format(deviceId))
+                else:
+                    _LOGGER.info("New device found will wait for another device for {} seconds...".format(CONST.DISCOVERY_TIME))
+                    self._known_devices.append(deviceId)
+                    found = True
+                    start = time()
+        pickle.dump(self._known_devices, open(".pca_devices", "wb"))
         return self._devices
 
     def get_current_power(self, deviceId):
@@ -146,7 +151,6 @@ class PCA:
 
     def _refresh(self):
         """Background refreshing thread."""
-
         while not self._stopevent.isSet():
             line = self._serial.readline()
             # this is for python2/python3 compatibility. Is there a better way?
@@ -154,7 +158,6 @@ class PCA:
                 line = line.encode().decode("utf-8")
             except AttributeError:
                 line = line.decode("utf-8")
-
             if self._re_reading.match(line):
                 line = line.split(" ")
                 deviceId = (
