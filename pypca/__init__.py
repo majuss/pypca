@@ -72,16 +72,23 @@ class PCA:
             line = self._serial.readline().decode("utf-8")
             if len(line) > 1:
                 line = line.split(" ")
-                deviceId = str(line[4]).zfill(3) + str(line[5]).zfill(3) + str(line[6]).zfill(3)
-                self._devices[deviceId] = {}
-                self._devices[deviceId]["state"] = line[10]
-                if deviceId in self._known_devices:
-                    _LOGGER.info("Skip device with ID {}, because it's already known.".format(deviceId))
-                else:
-                    _LOGGER.info("New device found will wait for another device for {} seconds...".format(CONST.DISCOVERY_TIME))
-                    self._known_devices.append(deviceId)
-                    found = True
-                    start = time()
+                if line[8] is not '170' or line[9] is not '170':
+                    deviceId = str(line[4]).zfill(3) + str(line[5]).zfill(3) + str(line[6]).zfill(3)
+                    self._devices[deviceId] = {}
+                    self._devices[deviceId]["power"] = (
+                        int(line[8]) * 256 + int(line[9])
+                    ) / 10.0
+                    self._devices[deviceId]["state"] = int(line[7])
+                    self._devices[deviceId]["consumption"] = (
+                        int(line[10]) * 256 + int(line[11])
+                    ) / 100.0                
+                    if deviceId in self._known_devices:
+                        _LOGGER.info("Skip device with ID {}, because it's already known.".format(deviceId))
+                    else:
+                        _LOGGER.info("New device found will wait for another device for {} seconds...".format(CONST.DISCOVERY_TIME))
+                        self._known_devices.append(deviceId)
+                        found = True
+                        start = time()
         pickle.dump(self._known_devices, open(".pca_devices", "wb"))
         return self._devices
 
