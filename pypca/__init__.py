@@ -1,11 +1,15 @@
 from __future__ import unicode_literals
+from pathlib import Path
+from time import time
+
 import logging
 import serial
 import re
 import threading
-from time import time
 import pypca.constants as CONST
 import pickle
+
+home = str(Path.home())
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -32,11 +36,11 @@ class PCA:
         self._serial = serial.Serial(timeout=timeout)
 
         try:
-            self._known_devices = pickle.load(open(".pca_devices", "rb"))
+            self._known_devices = pickle.load(open(home + "/.pca_devices", "rb"))
         except (OSError, IOError) as e:
+            _LOGGER.debug("No known devices file found {}".format(e))
             self._known_devices = []
-            pickle.dump(self._known_devices, open("var.pickle", "wb"))
-            pickle.dump(self._known_devices, open(".pca_devices", "wb"))
+            pickle.dump(self._known_devices, open(home + "/.pca_devices", "wb"))
 
     def open(self):
         """Open the device."""
@@ -62,12 +66,21 @@ class PCA:
             line = self._serial.readline().decode("utf-8")
         return True
     
-    def get_devices(self):
+    def get_devices(self, fast=0):
         """Get all the devices with the help of the l switch"""  # When the EEPROM is fried this is basically useless
         _LOGGER.info("Please press the button on you PCA")
         line = []
         start = int(time())
         found = False
+        if fast:
+            CONST.DISCOVERY_TIME = 5
+            CONST.DISCOVERY_TIMEOUT = 5
+        for device in self._known_devices:
+            self._devices[device] = {}
+            self._devices[device]['state'] = 0
+            self._devices[device]['consumption'] = 0
+            self._devices[device]['power'] = 0
+
         while not (int(time()) - start > CONST.DISCOVERY_TIMEOUT) or not (int(time()) - start > CONST.DISCOVERY_TIME or found):
             line = self._serial.readline().decode("utf-8")
             if len(line) > 1:
@@ -89,7 +102,7 @@ class PCA:
                         self._known_devices.append(deviceId)
                         found = True
                         start = time()
-        pickle.dump(self._known_devices, open(".pca_devices", "wb"))
+        pickle.dump(self._known_devices, open(home + "/.pca_devices", "wb"))
         return self._devices
 
     def get_current_power(self, deviceId):
@@ -112,7 +125,7 @@ class PCA:
 
     def start_scan(self):
         """Start scan task in background."""
-        self.get_devices()
+        self.get_devices(1)
         self._start_worker()
 
     def _write_cmd(self, cmd):
